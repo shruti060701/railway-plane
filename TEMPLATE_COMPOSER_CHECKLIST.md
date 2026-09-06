@@ -36,7 +36,7 @@ Apply these settings in the Railway template composer when generating the templa
 
 ## 3. Variable Descriptions (Add to EVERY variable)
 
-### `plane` — 12 total
+### `plane` — 16 total
 
 | Variable | Value | Mark Optional? | Description |
 |----------|-------|-----------------|-------------|
@@ -52,6 +52,10 @@ Apply these settings in the Railway template composer when generating the templa
 | `SECRET_KEY` | `${{secret(50)}}` | No | Django cryptographic secret for sessions and tokens. Auto-generated per deployment if left as the shipped placeholder, but setting an explicit long random value here at publish time is safer than relying on first-boot autogeneration. |
 | `LIVE_SERVER_SECRET_KEY` | `${{secret(50)}}` | No | Shared secret between the API and the real-time collaboration server. Same autogeneration caveat as `SECRET_KEY`. |
 | `DOMAIN_NAME` | `${{RAILWAY_PUBLIC_DOMAIN}}` | No | **Bare hostname only, no `https://` prefix.** Confirmed live — a protocol prefix here breaks the container's own domain validation regex and the app refuses to boot. |
+| `ADMIN_BASE_URL` | `https://${{RAILWAY_PUBLIC_DOMAIN}}` | No | **Required or the god-mode (instance admin setup) page hangs on an infinite loading spinner** — confirmed live, this is not documented in the AIO README's env var list at all. Must include the `https://` prefix (unlike `DOMAIN_NAME`). Same value as `APP_BASE_URL`/`SPACE_BASE_URL` for this single-domain all-in-one deploy. |
+| `SPACE_BASE_URL` | `https://${{RAILWAY_PUBLIC_DOMAIN}}` | No | Public-project space frontend base URL. Same reasoning as `ADMIN_BASE_URL` — left unset, this and the other two base URLs come back `null` from `/api/instances/` and break frontend routing. |
+| `APP_BASE_URL` | `https://${{RAILWAY_PUBLIC_DOMAIN}}` | No | Main web app base URL. Same reasoning as `ADMIN_BASE_URL`. |
+| `WEB_URL` | `https://${{RAILWAY_PUBLIC_DOMAIN}}` | No | Belt-and-suspenders alongside `APP_BASE_URL` — `start.sh` sets this internally from `DOMAIN_NAME`+`APP_PROTOCOL` already, but setting it explicitly avoids relying on that derivation being correct. |
 
 ### `postgres` — 4 total
 
@@ -116,6 +120,7 @@ Apply these settings in the Railway template composer when generating the templa
 - **Uploads fail / 403 on file attach:** `AWS_S3_ENDPOINT_URL` wasn't set, or doesn't point at `minio`'s private domain. Without it, the app defaults to real AWS S3 and MinIO credentials fail auth there.
 - **App won't start, domain validation error in logs:** `DOMAIN_NAME` has a `https://` prefix. It must be the bare hostname only.
 - **Real-time collaboration (live cursors, live editing) doesn't work but everything else does:** `LIVE_SERVER_SECRET_KEY` mismatch or missing — this key must be set (the API and live server both read it independently; there's no cross-service reference to enforce this at the platform level).
+- **"Get Started" / `/god-mode` (instance admin setup) hangs on an infinite loading spinner, everything else works fine:** confirmed live during this template's own test deploy. `ADMIN_BASE_URL`, `SPACE_BASE_URL`, and `APP_BASE_URL` were unset — these are separate Django settings from `DOMAIN_NAME`/`WEB_URL` and aren't mentioned anywhere in the AIO image's own README or `variables.env`. `/api/instances/` will show all three as `null` in its `config` object when this is the cause. Fix: set all three to the full `https://` public domain (unlike `DOMAIN_NAME`, these need the protocol prefix) and trigger a fresh deploy.
 - **This is a genuinely heavy template to run** — 5 services, comparable to Postiz's 8-service footprint. Not a cheap template; be upfront about this in the docs rather than downplaying it.
 
 ---
