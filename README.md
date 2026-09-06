@@ -2,7 +2,7 @@
 
 Plane — open-source Jira/Linear alternative for project management, issue tracking, and cycles. Deploy on Railway with one click.
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/REPLACE_WITH_TEMPLATE_CODE)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/ZC7OPU)
 
 ## Architecture
 
